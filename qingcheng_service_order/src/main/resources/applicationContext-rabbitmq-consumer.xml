@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                          http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+	<!--连接工厂-->
+	<rabbit:connection-factory id="connectionFactory" host="127.0.0.1" port="5672" username="guest" password="guest" publisher-confirms="true"/>
+	<!--队列-->
+	<!--创建订单超时未支付队列队列-->
+	<rabbit:queue name="queue.ordertimeout"/>
+
+	<!--消费者监听类-->
+	<bean id="orderTimeOutConsumer" class="com.qingcheng.consumer.OrderTimeOutConsumer"></bean>
+
+
+	<!--设置监听容器-->
+	<rabbit:listener-container connection-factory="connectionFactory" acknowledge="auto" >
+		<rabbit:listener queue-names="queue.ordertimeout" ref="orderTimeOutConsumer"/>
+	</rabbit:listener-container>
+</beans>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                          http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+	<!--连接工厂-->
+	<rabbit:connection-factory id="connectionFactory" host="127.0.0.1" port="5672" username="guest" password="guest" publisher-confirms="true"/>
+	<rabbit:template id="rabbitTemplate" connection-factory="connectionFactory" />
+
+	<!--rabbitAdmin-->
+	<rabbit:admin id="rabbitAdmin" connection-factory="connectionFactory"></rabbit:admin>
+
+	<!--创建队列-->
+	<!--商品详细页生成队列-->
+	<rabbit:queue name="queue.goods_details_page_generate"/>
+	<!--商品详细页删除队列-->
+	<rabbit:queue name="queue.goods_details_page_delete"/>
+	<!--商品索引数据更新队列-->
+	<rabbit:queue name="queue.goods_update_index"/>
+	<!--商品索引数据删除队列-->
+	<rabbit:queue name="queue.goods_delete_index"/>
+
+	<!--创建交换器-->
+	<!--商品上架交换器-->
+	<rabbit:fanout-exchange name="exchange.goods_upper_shelf">
+		<rabbit:bindings>
+			<rabbit:binding queue="queue.goods_details_page_generate"></rabbit:binding>
+			<rabbit:binding queue="queue.goods_update_index"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:fanout-exchange>
+
+	<!--商品下架交换器-->
+	<rabbit:fanout-exchange name="exchange.goods_lower_shelf">
+		<rabbit:bindings>
+			<rabbit:binding queue="queue.goods_details_page_delete"></rabbit:binding>
+			<rabbit:binding queue="queue.goods_delete_index"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:fanout-exchange>
+</beans>

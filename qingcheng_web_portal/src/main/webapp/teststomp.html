@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/stomp.min.js"></script>
+    <script>
+        var client = Stomp.client('ws://localhost:15674/ws');
+
+        var on_connect = function(x) {
+            id = client.subscribe("/exchange/paynotify", function(d) {
+                alert(d.body);
+            });
+        };
+        var on_error =  function() {
+            console.log('error');
+        };
+        client.connect('webguest', '123456', on_connect, on_error, '/');
+    </script>
+</head>
+<body>
+此页面只为测试rabbitmq的web stomp插件的webSocket双向通信，实现服务端向客户端推送消息的功能演示
+</body>
+</html>

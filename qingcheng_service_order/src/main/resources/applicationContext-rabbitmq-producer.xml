@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                          http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+	<!--连接工厂-->
+	<rabbit:connection-factory id="connectionFactory" host="127.0.0.1" port="5672" username="guest" password="guest" publisher-confirms="true"/>
+
+	<!--rabbitAdmin-->
+	<rabbit:admin id="rabbitAdmin" connection-factory="connectionFactory"></rabbit:admin>
+
+	<!--创建队列-->
+	<rabbit:queue name="queue.skuback"/>
+
+
+
+
+	<!--利用rabbitmq的TTL和延迟队列，实现延迟通知任务的功能
+         1、申明了一个订单通知服务的队列  queue.ordertimeout
+         2、申明了一个延迟队列queue.ordercreate1，给整个队列设置消息过期时间 为10秒
+         3、申明了一个延迟队列queue.ordercreate2  给发送到这个队列的消息，消息本身设置过期时间
+         4、当消息发送到2、3队列的时候，达到了过期时间，即转发到订单通知服务工作队列1
+         5、给队列1 配置消费者服务工作监听，即可完成延迟任务的结果。
+         -->
+
+	<!--队列声明-->
+	<!--创建订单超时未支付队列队列-->
+	 <rabbit:queue name="queue.ordertimeout"/>
+
+	<!--申明一个延迟队列，给整个队列的消息设置消息过期时间 x-message-ttl 1小时，测试为10秒钟
+         当消息达到过期时间的时候，rabbitmq将会把消息重新定位转发到其它的队列中去,本例子转发到
+         exchange:创建死信交换器  exchange.ordertimeout  （fanout）
+         routing-key:exchange.ordertimeout.key
+         满足如上两点的队列中去即为：queue.ordertimeout-->
+	 <rabbit:queue name="queue.order">
+		 <rabbit:queue-arguments>
+			 <!--  队列过期时间 -->
+			 <entry key="x-message-ttl" value="10000" value-type="java.lang.Long"/>
+			 <entry key="x-dead-letter-exchange" value="exchange.ordertimeout"/>
+			 <entry key="x-dead-letter-routing-key" value="exchange.ordertimeout.key"/>
+		 </rabbit:queue-arguments>
+	 </rabbit:queue>
+
+
+
+	<!-- 延迟队列工作的 exchange 即死信交换器 -->
+	 <rabbit:direct-exchange name="exchange.ordertimeout" durable="true" auto-delete="false">
+		 <rabbit:bindings>
+			 <!--  binding key 相同为 【exchange.ordertimeout.key】exchange转发消息到多个队列，这里只绑定一个queue.ordertimeout队列 -->
+			 <rabbit:binding queue="queue.ordertimeout" key="exchange.ordertimeout.key"/>
+		 </rabbit:bindings>
+	 </rabbit:direct-exchange>
+
+	<rabbit:template id="rabbitTemplate" connection-factory="connectionFactory" />
+</beans>
